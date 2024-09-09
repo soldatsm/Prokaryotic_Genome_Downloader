@@ -12,14 +12,20 @@ from . import (_genome_id_parser,
                downloader_unzipper, 
                version_printer)
 
-def argument_parser() -> argparse.ArgumentParser: 
+def argument_parser() -> argparse.ArgumentParser:
+    """
+    Parse command line arguments.
+
+    Returns:
+        argparse.ArgumentParser: Argument parser object.
+    """
     parser = argparse.ArgumentParser(
         prog='Bulk Genome Assembly Downloader',
         description= 'Programm to download genome assemblies. \
                         From NCBI through FTP'
     )
     
-    parser.add_argument('-i', 
+    parser.add_argument('-i',
                         '--input',
                         help='Path to file with assembly ID. \
                             All of them should be in one column',
@@ -42,6 +48,13 @@ def argument_parser() -> argparse.ArgumentParser:
 
 
 def main():
+    """
+    Main function of the script.
+    
+    It parses arguments, downloads and unzips all files from NCBI FTP server.
+    Then it moves protein and nucleotide files to separate folders and renames
+    them based on the information in the FASTA header.
+    """
     parser = argument_parser()
     args = parser.parse_args()
 
@@ -58,7 +71,7 @@ def main():
 
     all_assembly_folder = os.path.join(output_abs_path, 'assemblies')
     all_proteomes_folder = os.path.join(output_abs_path, 'proteomes')
-    all_nucleotide_folder = os.path.join(output_abs_path, 'nucleoitede')
+    all_nucleotide_folder = os.path.join(output_abs_path, 'nucleotides')
 
     try:
         os.mkdir(all_assembly_folder)
