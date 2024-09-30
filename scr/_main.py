@@ -35,6 +35,8 @@ def argument_parser() -> argparse.ArgumentParser:
                         help='Path to folder to store genomes',
                         type=str,
                         required=True)
+    parser.add_argument('-il', '--input_list', help='List of NCBI IDs',
+                        nargs='+')
     
     parser.add_argument('-m',
                         '--mode',
@@ -58,16 +60,20 @@ def main():
     parser = argument_parser()
     args = parser.parse_args()
 
-    input_abs_path = os.path.abspath(args.input)
-    output_abs_path = os.path.abspath(args.output)
 
     terminal_size = shutil.get_terminal_size()
     start_time = datetime.now()
     version_printer(terminal_size)
 
-    with open(input_abs_path, 'r') as read_file:
-        assemblies_lst = [i.strip('\n').replace('"', '').strip()
-                          for i in read_file.readlines()]
+    if args.input:
+        input_abs_path = os.path.abspath(args.input)
+        with open(input_abs_path, 'r', encoding='utf8') as read_file:
+            assemblies_lst = [i.strip('\n').replace('"', '').strip()
+                            for i in read_file.readlines()]
+    else:
+        assemblies_lst = args.input_list
+        
+    output_abs_path = os.path.abspath(args.output)
 
     all_assembly_folder = os.path.join(output_abs_path, 'assemblies')
     all_proteomes_folder = os.path.join(output_abs_path, 'proteomes')
