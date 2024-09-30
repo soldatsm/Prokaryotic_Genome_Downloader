@@ -2,7 +2,7 @@ from typing import Tuple
 import os
 import subprocess
 import shutil
-
+from glob import glob
 def _genome_id_parser(assembly_id:str) -> Tuple[str, str]:
     """
     Function to parse assembly id into two parts: prefix and numbers.
@@ -97,10 +97,18 @@ def downloader_unzipper(assembly_id:str, path_assembly:str,
     subprocess.run(['cp', f'./ncbi_dataset/data/{assembly_id}/protein.faa',
                     f'{prot}/{assembly_id}.faa'],
                    cwd=path_assembly, check=False)
-    subprocess.run(['mv', f'./ncbi_dataset/data/{assembly_id}',
+    
+    fna_file_path = glob(f'{path_assembly}/ncbi_dataset/data/{assembly_id}/*_genomic.fna')[0]
+
+    subprocess.run(['cp', f'{fna_file_path}',
                     f'{assembly}/'],
                    cwd=path_assembly, check=False)
+    subprocess.run(['cp', '-r', f'./ncbi_dataset/data/{assembly_id}',
+                    f'{path_assembly}/'],
+                   cwd=path_assembly, check=False)
     subprocess.run(['rm', 'README.md'],
+                   cwd=path_assembly, check=False)
+    subprocess.run(['rm', 'md5sum.txt'],
                    cwd=path_assembly, check=False)
     subprocess.run(['rm', '-r', './ncbi_dataset'],
                    cwd=path_assembly, check=False)
@@ -171,8 +179,8 @@ def version_printer(terminal_size:Tuple[int, int]) -> None:
         Size of terminal window.
     """
     script_name = 'Bulk Genome Assembly Downloader'
-    version = 'Version: 0.01'
-    last_update = 'Updated: 09.09.24'
+    version = 'Version: 0.02'
+    last_update = 'Updated: 30.09.24'
     author = 'Tulenkov A.S.'
     affiliation = 'Winogradsky Institute of Microbiology, RAS'
 
