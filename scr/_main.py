@@ -3,6 +3,7 @@ import os
 from datetime import datetime
 import shutil
 from tqdm import tqdm
+import sys
 from . import (_genome_id_parser,
                get_link_to_genome_folder,
                downloader_full,
@@ -84,7 +85,26 @@ def main():
         os.mkdir(all_proteomes_folder)
         os.mkdir(all_nucleotide_folder)
     except FileExistsError:
-        pass #passet exeption
+        print('This folders already exists:')
+        print(f'Protein folder -- {all_proteomes_folder}')
+        print(f'Nucleotide folder -- {all_nucleotide_folder}')
+        print(f'Assembly folder -- {all_assembly_folder}')
+        print('\n')
+        user_answer = input(
+            'Do you want to continue? It will delete all files in these folders (y/n): '
+            ).lower()
+        print('\n')
+        if user_answer == 'y':
+            shutil.rmtree(all_assembly_folder)
+            shutil.rmtree(all_proteomes_folder)
+            shutil.rmtree(all_nucleotide_folder)
+            print('All folders deleted. Creating new ones and downloading.')
+            os.mkdir(all_assembly_folder)
+            os.mkdir(all_proteomes_folder)
+            os.mkdir(all_nucleotide_folder)
+            print('-' * terminal_size[0])
+        else:
+            sys.exit()
 
     for assembly in tqdm(assemblies_lst, desc='Downloading...'):
         files_to_unzip = ()
