@@ -139,33 +139,39 @@ def renamer(old_path:str, prot:str) -> None:
     os.rename(fpath_proteome, updated_path)
 
 
-def file_mover(path_asembly:str, prot_path:str,
+def file_mover(path_assembly:str, prot_path:str,
                nucl_path:str) -> Tuple[str, str]:
     """
     Moves protein and nucleotide files from one folder to two different
     folders.
     
     Args:
-        path_asembly (str): Path to folder where assembly is placed.
+        path_assembly (str): Path to folder where assembly is placed.
         prot_path (str): Path to folder where proteome will be placed.
         nucl_path (str): Path to folder where nucleotide sequence will be placed.
     
     Returns:
         Tuple[str, str]: Paths to moved files.
     """
-    folder_files = os.listdir(path_asembly)
+    folder_files = os.listdir(path_assembly)
+    protein_file_suf = None
+    nucl_file_suf = None
+
     for i in folder_files:
         if '_protein.faa.gz' in i:
             protein_file_suf = i
         if '_genomic.fna.gz' in i:
             nucl_file_suf = i
+            
+    if protein_file_suf is None or nucl_file_suf is None:
+        raise FileNotFoundError('Protein or nucleotide file not found.')
 
-    shutil.copy(os.path.join(path_asembly, protein_file_suf),
+    shutil.copy(os.path.join(path_assembly, protein_file_suf),
                 os.path.join(prot_path, protein_file_suf))
-
-    shutil.copy(os.path.join(path_asembly, nucl_file_suf),
+    
+    shutil.copy(os.path.join(path_assembly, nucl_file_suf),
                 os.path.join(nucl_path, nucl_file_suf))
-
+    
     return (os.path.join(prot_path, protein_file_suf), os.path.join(nucl_path, nucl_file_suf))
 
 
@@ -179,8 +185,8 @@ def version_printer(terminal_size:Tuple[int, int]) -> None:
         Size of terminal window.
     """
     script_name = 'Bulk Genome Assembly Downloader'
-    version = 'Version: 0.02'
-    last_update = 'Updated: 30.09.24'
+    version = 'Version: 0.03'
+    last_update = 'Updated: 18.10.24'
     author = 'Tulenkov A.S.'
     affiliation = 'Winogradsky Institute of Microbiology, RAS'
 
