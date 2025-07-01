@@ -11,7 +11,7 @@ from . import (_genome_id_parser,
                file_mover,
                unzipper,
                downloader_unzipper, 
-               version_printer)
+               version_printer, troublesome_assemblies)
 
 def argument_parser() -> argparse.ArgumentParser:
     """
@@ -61,7 +61,6 @@ def main():
     parser = argument_parser()
     args = parser.parse_args()
 
-
     terminal_size = shutil.get_terminal_size()
     start_time = datetime.now()
     version_printer(terminal_size)
@@ -94,6 +93,7 @@ def main():
             'Do you want to continue? It will delete all files in these folders (y/n): '
             ).lower()
         print('\n')
+
         if user_answer == 'y':
             shutil.rmtree(all_assembly_folder)
             shutil.rmtree(all_proteomes_folder)
@@ -114,12 +114,14 @@ def main():
         os.mkdir(genome_folder)
 
         #options
+        #TODO: Сделать чтобы при возникновении ошибок со сборками он не прерывался.
         if args.mode == 'full':
             downloader_full(assembly_url, genome_folder)
             files_to_unzip += file_mover(genome_folder, all_proteomes_folder, all_nucleotide_folder)
 
             for path in files_to_unzip:
-                unzipper(path)
+                if path is not '':
+                    unzipper(path)
 
         elif args.mode == 'lite':
             downloader_unzipper(assembly, all_assembly_folder,
@@ -127,6 +129,12 @@ def main():
 
     for file in os.listdir(all_proteomes_folder):
         renamer(all_proteomes_folder, file)
+
+    #writing file with troublesome assemblies id
+    if troublesome_assemblies is not None:
+        with open(f'{output_abs_path}/troublesome_assemblies.csv', 'w') as write_file:
+            write_file.writelines([f'{i}\n' for i in troublesome_assemblies])
+            print(f'There is {len(troublesome_assemblies)} assemblies that had some problems. File with IDs {output_abs_path}/troublesome_assemblies.csv')
 
     print('-' * terminal_size[0])
     print(f'Script working time: {datetime.now() - start_time}')

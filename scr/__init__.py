@@ -1,8 +1,12 @@
+#TODO:Проверить что будет если он не сожет вообще скачать файл. И учесть это в следующей версии, чтобы не было аварийного прерывания.
 from typing import Tuple
 import os
 import subprocess
 import shutil
 from glob import glob
+
+troublesome_assemblies = []
+
 def _genome_id_parser(assembly_id:str) -> Tuple[str, str]:
     """
     Function to parse assembly id into two parts: prefix and numbers.
@@ -93,27 +97,41 @@ def downloader_unzipper(assembly_id:str, path_assembly:str,
                     f"https://api.ncbi.nlm.nih.gov/datasets/v2alpha/genome/accession/{assembly_id}/download?include_annotation_type=GENOME_FASTA,GENOME_GFF,RNA_FASTA,CDS_FASTA,PROT_FASTA,SEQUENCE_REPORT&filename={assembly_id}.zip"], 
                     cwd=path_assembly, check=False)
     subprocess.run(['unzip', '-q', f'{assembly_id}.zip'],
-                   cwd=path_assembly, check=False)
+                cwd=path_assembly, check=False)
     subprocess.run(['cp', f'./ncbi_dataset/data/{assembly_id}/protein.faa',
                     f'{prot}/{assembly_id}.faa'],
-                   cwd=path_assembly, check=False)
-    
-    fna_file_path = glob(f'{path_assembly}/ncbi_dataset/data/{assembly_id}/*_genomic.fna')[0]
+                cwd=path_assembly, check=False)
+        
+    try:
+        fna_file_path = glob(f'{path_assembly}/ncbi_dataset/data/{assembly_id}/*_genomic.fna')[0]
 
-    subprocess.run(['cp', f'{fna_file_path}',
+        subprocess.run(['cp', f'{fna_file_path}',
                     f'{assembly}/'],
-                   cwd=path_assembly, check=False)
-    subprocess.run(['cp', '-r', f'./ncbi_dataset/data/{assembly_id}',
-                    f'{path_assembly}/'],
-                   cwd=path_assembly, check=False)
-    subprocess.run(['rm', 'README.md'],
-                   cwd=path_assembly, check=False)
-    subprocess.run(['rm', 'md5sum.txt'],
-                   cwd=path_assembly, check=False)
-    subprocess.run(['rm', '-r', './ncbi_dataset'],
-                   cwd=path_assembly, check=False)
-    subprocess.run(['rm', f'{assembly_id}.zip'],
-                   cwd=path_assembly, check=False)
+                cwd=path_assembly, check=False)
+        subprocess.run(['cp', '-r', f'./ncbi_dataset/data/{assembly_id}',
+                        f'{path_assembly}/'],
+                    cwd=path_assembly, check=False)
+        subprocess.run(['rm', 'README.md'],
+                    cwd=path_assembly, check=False)
+        subprocess.run(['rm', 'md5sum.txt'],
+                    cwd=path_assembly, check=False)
+        subprocess.run(['rm', '-r', './ncbi_dataset'],
+                    cwd=path_assembly, check=False)
+        subprocess.run(['rm', f'{assembly_id}.zip'],
+                    cwd=path_assembly, check=False)
+
+    except (FileNotFoundError, IndexError):
+        print(f'There is error with {assembly_id}. Continue')
+        troublesome_assemblies.append(assembly_id)
+
+        subprocess.run(['rm', 'README.md'],
+                    cwd=path_assembly, check=False)
+        subprocess.run(['rm', 'md5sum.txt'],
+                    cwd=path_assembly, check=False)
+        subprocess.run(['rm', '-r', './ncbi_dataset'],
+                    cwd=path_assembly, check=False)
+        subprocess.run(['rm', f'{assembly_id}.zip'],
+                    cwd=path_assembly, check=False)
 
 
 def renamer(old_path:str, prot:str) -> None:
@@ -128,6 +146,7 @@ def renamer(old_path:str, prot:str) -> None:
         old_path (str): Path to folder where protein file is placed.
         prot (str): Name of protein file.
     """
+    
     fpath_proteome = os.path.join(old_path, prot)
     with open(fpath_proteome, 'r', encoding='utf8') as proteome_file:
         first_line = proteome_file.readline()
@@ -162,17 +181,35 @@ def file_mover(path_assembly:str, prot_path:str,
             protein_file_suf = i
         if '_genomic.fna.gz' in i:
             nucl_file_suf = i
+    #FIXME: Надо переписать этот кринж
+    if protein_file_suf is None and nucl_file_suf is not None:
+        print(f"There is problem with {path_assembly.split('/')[-1]}. Protein file not found.")
+        troublesome_assemblies.append(path_assembly.split('/')[-1])
+        shutil.copy(os.path.join(path_assembly, nucl_file_suf),
+                    os.path.join(nucl_path, nucl_file_suf))
+        return (os.path.join(nucl_path, nucl_file_suf), '')
+    
+    elif nucl_file_suf is None and protein_file_suf is not None:
+        print(f"There is problem with {path_assembly.split('/')[-1]}. Nucleotide file not found.")
+        troublesome_assemblies.append(path_assembly.split('/')[-1])
+        shutil.copy(os.path.join(path_assembly, protein_file_suf),
+                    os.path.join(prot_path, protein_file_suf))
+        return (os.path.join(prot_path, protein_file_suf), '')
+    
+    elif protein_file_suf is None and nucl_file_suf is None:
+        print(f"There is problem with {path_assembly.split('/')[-1]}. Protein or nucleotide file not found.")
+        troublesome_assemblies.append(path_assembly.split('/')[-1])
+        return ('', '')
+    
+    else:
             
-    if protein_file_suf is None or nucl_file_suf is None:
-        raise FileNotFoundError('Protein or nucleotide file not found.')
-
-    shutil.copy(os.path.join(path_assembly, protein_file_suf),
-                os.path.join(prot_path, protein_file_suf))
-    
-    shutil.copy(os.path.join(path_assembly, nucl_file_suf),
-                os.path.join(nucl_path, nucl_file_suf))
-    
-    return (os.path.join(prot_path, protein_file_suf), os.path.join(nucl_path, nucl_file_suf))
+        shutil.copy(os.path.join(path_assembly, protein_file_suf),
+                    os.path.join(prot_path, protein_file_suf))
+        
+        shutil.copy(os.path.join(path_assembly, nucl_file_suf),
+                    os.path.join(nucl_path, nucl_file_suf))
+        
+        return (os.path.join(prot_path, protein_file_suf), os.path.join(nucl_path, nucl_file_suf))
 
 
 def version_printer(terminal_size:Tuple[int, int]) -> None:
@@ -185,8 +222,8 @@ def version_printer(terminal_size:Tuple[int, int]) -> None:
         Size of terminal window.
     """
     script_name = 'Bulk Genome Assembly Downloader'
-    version = 'Version: 0.03'
-    last_update = 'Updated: 18.10.24'
+    version = 'Version: 0.04'
+    last_update = 'Updated: 01.07.25'
     author = 'Tulenkov A.S.'
     affiliation = 'Winogradsky Institute of Microbiology, RAS'
 
