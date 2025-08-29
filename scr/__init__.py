@@ -1,4 +1,5 @@
-#TODO:Проверить что будет если он не сожет вообще скачать файл. И учесть это в следующей версии, чтобы не было аварийного прерывания.
+#TODO:Проверить что будет если он не сожет вообще скачать файл. И учесть это в следующей версии, чтобы не было аварийного прерывания. 
+#TODO: Еще надо добавить опцию, чтобы можно было выбирать что качать. Например только геномные или протеомные файлы
 from typing import Tuple
 import os
 import subprocess
@@ -103,7 +104,8 @@ def downloader_unzipper(assembly_id:str, path_assembly:str,
                 cwd=path_assembly, check=False)
         
     try:
-        fna_file_path = glob(f'{path_assembly}/ncbi_dataset/data/{assembly_id}/*_genomic.fna')[0]
+        fna_file_path = glob(f'{path_assembly}/ncbi_dataset/data/{assembly_id}/GC*_genomic.fna')[0]
+        #print(fna_file_path)
 
         subprocess.run(['cp', f'{fna_file_path}',
                     f'{assembly}/'],
@@ -181,6 +183,7 @@ def file_mover(path_assembly:str, prot_path:str,
             protein_file_suf = i
         if '_genomic.fna.gz' in i:
             nucl_file_suf = i
+
     #FIXME: Надо переписать этот кринж
     if protein_file_suf is None and nucl_file_suf is not None:
         print(f"There is problem with {path_assembly.split('/')[-1]}. Protein file not found.")
@@ -222,8 +225,8 @@ def version_printer(terminal_size:Tuple[int, int]) -> None:
         Size of terminal window.
     """
     script_name = 'Bulk Genome Assembly Downloader'
-    version = 'Version: 0.04'
-    last_update = 'Updated: 01.07.25'
+    version = 'Version: 0.05'
+    last_update = 'Updated: 20.08.25'
     author = 'Tulenkov A.S.'
     affiliation = 'Winogradsky Institute of Microbiology, RAS'
 
